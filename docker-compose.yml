@@ -1,0 +1,24 @@
+services:
+  scrapclaw:
+    build:
+      context: .
+    image: scrapclaw:latest
+    container_name: scrapclaw
+    environment:
+      PORT: 8192
+      TZ: America/Toronto
+    ports:
+      - "8192:8192"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8192/health')",
+        ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
