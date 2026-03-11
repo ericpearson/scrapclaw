@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from scrapling.fetchers import StealthyFetcher
 
-app = FastAPI(title="scrapclaw", version="0.1.0")
+app = FastAPI(title="scrapclaw", version="0.0.1")
 
 
 class SolveRequest(BaseModel):

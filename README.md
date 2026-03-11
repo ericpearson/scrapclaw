@@ -1,6 +1,6 @@
 # scrapclaw
 
-Standalone containerized Scrapling API service, based on the working `../vpn/scrapling-api` project.
+Standalone containerized Scrapling API service for browser-backed page fetches, including Cloudflare-protected targets.
 
 It exposes a small FastAPI app that uses `scrapling`'s `StealthyFetcher` with Cloudflare solving enabled, packaged as a Docker image that can be run locally or published to GitHub Container Registry.
 
@@ -11,6 +11,7 @@ It exposes a small FastAPI app that uses `scrapling`'s `StealthyFetcher` with Cl
 - `POST /v1` Scrapling-backed page fetch endpoint
 - Dockerfile ready for local builds and container platforms
 - `docker-compose.yml` for local or server deployment
+- OpenClaw-compatible skill bundle in `skills/scrapclaw`
 - GitHub Actions workflow to build and publish `ghcr.io/ericpearson/scrapclaw`
 
 ## Project files
@@ -18,6 +19,7 @@ It exposes a small FastAPI app that uses `scrapling`'s `StealthyFetcher` with Cl
 - `main.py`: FastAPI app and `/v1` implementation
 - `Dockerfile`: image build based on `ghcr.io/d4vinci/scrapling:latest`
 - `docker-compose.yml`: local deployment config with health check
+- `skills/scrapclaw/SKILL.md`: OpenClaw skill that teaches an agent how to call the API
 - `.github/workflows/docker.yml`: build and publish workflow for GitHub Actions
 
 ## Requirements
@@ -144,6 +146,56 @@ docker compose up -d
 
 Use the compose file in this repo as the stack definition. If you're using a published GHCR image, point the service at `ghcr.io/ericpearson/scrapclaw:latest` instead of building locally.
 
+## OpenClaw
+
+OpenClaw workspace skills live in `<workspace>/skills`, and each skill is a folder containing a `SKILL.md`. This repo now includes a ready-to-install skill bundle at `skills/scrapclaw`.
+
+### Install the local skill into an OpenClaw workspace
+
+```bash
+mkdir -p ~/.openclaw/workspace/skills
+cp -R skills/scrapclaw ~/.openclaw/workspace/skills/
+```
+
+OpenClaw will pick it up in the next session, or after a skills refresh.
+
+### Optional: point the skill at a non-default Scrapclaw URL
+
+By default the skill assumes Scrapclaw is reachable at `http://127.0.0.1:8192`. To override that, set `SCRAPCLAW_BASE_URL` in your OpenClaw skill config:
+
+```json5
+{
+  skills: {
+    entries: {
+      scrapclaw: {
+        env: {
+          SCRAPCLAW_BASE_URL: "https://scrapclaw.example.com"
+        }
+      }
+    }
+  }
+}
+```
+
+### Publish the skill to ClawHub
+
+OpenClaw's ClawHub registry publishes versioned skill folders, not the whole repo. Publish the bundled skill directory like this:
+
+```bash
+clawhub publish ./skills/scrapclaw \
+  --slug scrapclaw \
+  --name "Scrapclaw" \
+  --version 0.0.1 \
+  --changelog "Initial release" \
+  --tags latest
+```
+
+After that, OpenClaw users can install it with:
+
+```bash
+clawhub install scrapclaw --version 0.0.1
+```
+
 ## GitHub Actions and GHCR
 
 The workflow in `.github/workflows/docker.yml`:
@@ -151,6 +203,8 @@ The workflow in `.github/workflows/docker.yml`:
 - builds on pull requests
 - builds and pushes on `main`
 - builds and pushes on version tags like `v1.0.0`
+
+For the initial container release in this repo, use tag `v0.0.1`.
 
 For publishing to work:
 
@@ -160,5 +214,5 @@ For publishing to work:
 
 ## Notes
 
-- This repo is intentionally minimal and mirrors the behavior of the existing `../vpn/scrapling-api` service.
+- This repo is intentionally minimal and focuses on exposing Scrapling through a small HTTP API plus an OpenClaw skill wrapper.
 - `scrapling install` runs during image build so the browser automation pieces are available in the final container.
