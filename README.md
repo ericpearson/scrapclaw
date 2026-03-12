@@ -174,7 +174,38 @@ Use the compose file in this repo as the stack definition. If you're using a pub
 
 ## OpenClaw
 
-OpenClaw workspace skills live in `<workspace>/skills`, and each skill is a folder containing a `SKILL.md`. This repo now includes a ready-to-install skill bundle at `skills/scrapclaw`.
+OpenClaw workspace skills live in `<workspace>/skills`, and each skill is a folder containing a `SKILL.md`. This repo includes a ready-to-install skill bundle at `skills/scrapclaw`, paired with a published Docker image so agents have a browser-backed fetch service to call.
+
+### Recommended install path
+
+Run the published container image first:
+
+```bash
+docker run --rm -d \
+  --name scrapclaw \
+  -p 8192:8192 \
+  ghcr.io/ericpearson/scrapclaw:v0.0.2
+```
+
+That same image is the intended runtime for the GitHub `v0.0.2` release.
+
+If you use the source-build path instead, review the repo, [Dockerfile](/Users/epearson/projects/scrapclaw/Dockerfile), and [docker-compose.yml](/Users/epearson/projects/scrapclaw/docker-compose.yml) before running `docker compose up --build -d`. Building unreviewed code can execute arbitrary commands on the host.
+
+Then install the skill from ClawHub:
+
+```bash
+clawhub install scrapclaw --version 0.0.2
+```
+
+If you prefer to run from source, you can still use:
+
+```bash
+git clone https://github.com/ericpearson/scrapclaw.git
+cd scrapclaw
+docker compose up --build -d
+```
+
+For local installs, expect to need `docker`, `docker compose`, `git`, and `curl`.
 
 ### Install the local skill into an OpenClaw workspace
 
@@ -213,15 +244,15 @@ OpenClaw's ClawHub registry publishes versioned skill folders, not the whole rep
 clawhub publish ./skills/scrapclaw \
   --slug scrapclaw \
   --name "Scrapclaw" \
-  --version 0.0.1 \
-  --changelog "Initial release" \
+  --version 0.0.2 \
+  --changelog "Release 0.0.2" \
   --tags latest
 ```
 
 After that, OpenClaw users can install it with:
 
 ```bash
-clawhub install scrapclaw --version 0.0.1
+clawhub install scrapclaw --version 0.0.2
 ```
 
 ## GitHub Actions and GHCR
@@ -232,7 +263,7 @@ The workflow in `.github/workflows/docker.yml`:
 - builds and pushes on `main`
 - builds and pushes on version tags like `v1.0.0`
 
-For the initial container release in this repo, use tag `v0.0.1`.
+To publish a container release from this repo, push a semver tag such as `v0.0.2`.
 
 For publishing to work:
 

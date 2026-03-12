@@ -1,12 +1,57 @@
 ---
 name: scrapclaw
-description: Fetch page HTML through a running Scrapclaw service when a task needs browser-backed scraping or Cloudflare handling.
-metadata: {"openclaw":{"homepage":"https://github.com/ericpearson/scrapclaw"}}
+description: Run Scrapclaw as a Dockerized browser-backed scraping service, then use this skill to fetch HTML from JavaScript-heavy or Cloudflare-protected pages through its HTTP API.
+metadata: {"openclaw":{"homepage":"https://github.com/ericpearson/scrapclaw"},"clawdis":{"homepage":"https://github.com/ericpearson/scrapclaw","primaryEnv":"SCRAPCLAW_BASE_URL","requires":{"bins":["docker","git","curl"],"env":["SCRAPCLAW_BASE_URL","SCRAPCLAW_API_TOKEN"]}}}
 ---
 
 # Scrapclaw
 
-Use this skill when the user needs raw HTML from a page that may require a real browser, waiting for JavaScript, or Cloudflare solving. Do not use it for simple static pages that are easier to fetch directly.
+Use this skill when the user needs raw HTML from a page that may require a real browser, waiting for JavaScript, or Cloudflare solving, and when they want a self-hosted Docker container they can run locally or on a server. Do not use it for simple static pages that are easier to fetch directly.
+
+This repo includes both:
+
+- a published Docker image that exposes the Scrapclaw API
+- an OpenClaw skill that knows how to call that API
+
+## Install
+
+Preferred: run the published Docker image from GitHub Container Registry:
+
+```bash
+docker run --rm -d \
+  --name scrapclaw \
+  -p 8192:8192 \
+  ghcr.io/ericpearson/scrapclaw:v0.0.2
+```
+
+The same image is referenced by the GitHub `v0.0.2` release for this repo.
+
+If you use the source build path instead of the published image, review the repo, `Dockerfile`, and `docker-compose.yml` first. Running `docker compose up --build` on unreviewed code can execute arbitrary code on the host.
+
+If you want to run from source instead, use Docker Compose:
+
+```bash
+git clone https://github.com/ericpearson/scrapclaw.git
+cd scrapclaw
+docker compose up --build -d
+```
+
+The API will be available at `http://127.0.0.1:8192`.
+
+If you are unsure about the target pages or host environment, prefer running the container on an isolated VM or similarly restricted host.
+
+Install the local skill into an OpenClaw workspace:
+
+```bash
+mkdir -p ~/.openclaw/workspace/skills
+cp -R skills/scrapclaw ~/.openclaw/workspace/skills/
+```
+
+Or install it from ClawHub:
+
+```bash
+clawhub install scrapclaw --version 0.0.2
+```
 
 ## Endpoint
 
@@ -14,6 +59,8 @@ Use this skill when the user needs raw HTML from a page that may require a real 
 - Otherwise use `http://127.0.0.1:8192`.
 - If `SCRAPCLAW_API_TOKEN` is set, include `Authorization: Bearer $SCRAPCLAW_API_TOKEN`.
 - Do not use this skill to access localhost, RFC1918/private LAN ranges, Docker bridge IPs, or other internal-only services unless the user explicitly asks and the operator has intentionally allowlisted the target.
+- If the service is not running yet, tell the user they need to start the Scrapclaw container first.
+- Treat `SCRAPCLAW_API_TOKEN` as sensitive and only use it when the user or operator intentionally configured it.
 
 ## Workflow
 
