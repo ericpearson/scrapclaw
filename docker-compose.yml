@@ -7,6 +7,13 @@ services:
     environment:
       PORT: 8192
       TZ: America/Toronto
+      SCRAPCLAW_BLOCK_PRIVATE_NETWORKS: "true"
+      SCRAPCLAW_MAX_TIMEOUT_MS: 120000
+      SCRAPCLAW_MAX_WAIT_MS: 10000
+      # Optional: require clients to send Authorization: Bearer $SCRAPCLAW_API_TOKEN
+      SCRAPCLAW_API_TOKEN: ""
+      # Optional: comma-separated hostname allowlist for internal targets you trust
+      SCRAPCLAW_ALLOWED_HOSTS: ""
     ports:
       - "8192:8192"
     healthcheck:
