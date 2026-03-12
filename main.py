@@ -2,6 +2,8 @@ import ipaddress
 import os
 import socket
 import time
+from html import unescape
+from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import urlparse
 
@@ -9,7 +11,7 @@ from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 from scrapling.fetchers import StealthyFetcher
 
-app = FastAPI(title="scrapclaw", version="0.0.4")
+app = FastAPI(title="scrapclaw", version="0.0.5")
 
 BLOCK_PRIVATE = os.getenv("SCRAPCLAW_BLOCK_PRIVATE_NETWORKS", "true").lower() != "false"
 API_TOKEN = os.getenv("SCRAPCLAW_API_TOKEN", "").strip()
@@ -27,6 +29,56 @@ class SolveRequest(BaseModel):
     url: str
     maxTimeout: int = Field(default=60000, ge=1)
     wait: int = Field(default=0, ge=0)
+    responseMode: str = Field(default="html")
+
+
+class _HTMLTextExtractor(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__()
+        self._skip_depth = 0
+        self._in_title = False
+        self._title_parts: list[str] = []
+        self._text_parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag in {"script", "style"}:
+            self._skip_depth += 1
+        elif tag == "title":
+            self._in_title = True
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in {"script", "style"} and self._skip_depth > 0:
+            self._skip_depth -= 1
+        elif tag == "title":
+            self._in_title = False
+
+    def handle_data(self, data: str) -> None:
+        if self._skip_depth > 0:
+            return
+
+        text = " ".join(data.split())
+        if not text:
+            return
+
+        if self._in_title:
+            self._title_parts.append(text)
+        else:
+            self._text_parts.append(text)
+
+    @property
+    def title(self) -> str:
+        return unescape(" ".join(self._title_parts)).strip()
+
+    @property
+    def text(self) -> str:
+        return unescape("\n".join(self._text_parts)).strip()
+
+
+def _extract_page_content(html: str) -> tuple[str, str]:
+    parser = _HTMLTextExtractor()
+    parser.feed(html)
+    parser.close()
+    return parser.title, parser.text
 
 
 def _is_blocked_ip(value: str) -> bool:
@@ -93,6 +145,9 @@ async def solve(req: SolveRequest, authorization: str | None = Header(default=No
     if req.cmd != "request.get":
         raise HTTPException(status_code=400, detail="Unsupported cmd")
 
+    if req.responseMode not in {"html", "text"}:
+        raise HTTPException(status_code=400, detail="responseMode must be 'html' or 'text'")
+
     _validate_target(req.url)
     timeout_ms = min(req.maxTimeout, MAX_TIMEOUT_MS)
     wait_ms = min(req.wait, MAX_WAIT_MS)
@@ -114,6 +169,10 @@ async def solve(req: SolveRequest, authorization: str | None = Header(default=No
             "solution": {},
         }
 
+    html_content = getattr(page, "html_content", str(page))
+    title, text_content = _extract_page_content(html_content)
+    response_body = html_content if req.responseMode == "html" else text_content
+
     return {
         "status": "ok",
         "message": "",
@@ -122,7 +181,9 @@ async def solve(req: SolveRequest, authorization: str | None = Header(default=No
         "solution": {
             "url": str(getattr(page, "url", req.url)),
             "status": getattr(page, "status", 200),
-            "response": getattr(page, "html_content", str(page)),
+            "response": response_body,
+            "responseMode": req.responseMode,
+            "title": title,
             "cookies": [],
             "userAgent": "",
         },

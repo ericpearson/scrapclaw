@@ -71,7 +71,7 @@ Expected response:
 ```bash
 curl -X POST http://localhost:8192/v1 \
   -H 'Content-Type: application/json' \
-  -d '{"url":"https://example.com","maxTimeout":60000,"wait":0}'
+  -d '{"url":"https://example.com","maxTimeout":60000,"wait":0,"responseMode":"html"}'
 ```
 
 Request body:
@@ -80,6 +80,7 @@ Request body:
 - `maxTimeout`: request timeout in milliseconds
 - `wait`: extra wait time in milliseconds after navigation
 - `cmd`: accepted for compatibility, defaults to `request.get`
+- `responseMode`: `html` or `text`, defaults to `html`
 
 Response shape:
 
@@ -93,11 +94,15 @@ Response shape:
     "url": "https://example.com",
     "status": 200,
     "response": "<html>...</html>",
+    "responseMode": "html",
+    "title": "Example Domain",
     "cookies": [],
     "userAgent": ""
   }
 }
 ```
+
+If `responseMode` is set to `text`, Scrapclaw returns extracted readable page text in `solution.response` instead of raw HTML.
 
 On failure the service returns:
 
@@ -184,17 +189,17 @@ Run the published container image first:
 docker run --rm -d \
   --name scrapclaw \
   -p 8192:8192 \
-  ghcr.io/ericpearson/scrapclaw:v0.0.4
+  ghcr.io/ericpearson/scrapclaw:v0.0.5
 ```
 
-That same image is the intended runtime for the GitHub `v0.0.4` release.
+That same image is the intended runtime for the GitHub `v0.0.5` release.
 
 If you use the source-build path instead, review the repo, [Dockerfile](/Users/epearson/projects/scrapclaw/Dockerfile), and [docker-compose.yml](/Users/epearson/projects/scrapclaw/docker-compose.yml) before running `docker compose up --build -d`. Building unreviewed code can execute arbitrary commands on the host.
 
 Then install the skill from ClawHub:
 
 ```bash
-clawhub install scrapclaw --version 0.0.4
+clawhub install scrapclaw --version 0.0.5
 ```
 
 If you prefer to run from source, you can still use:
@@ -244,15 +249,15 @@ OpenClaw's ClawHub registry publishes versioned skill folders, not the whole rep
 clawhub publish ./skills/scrapclaw \
   --slug scrapclaw \
   --name "Scrapclaw" \
-  --version 0.0.4 \
-  --changelog "Security hardening, improved install guidance, and ibarsi's contribution" \
+  --version 0.0.5 \
+  --changelog "Add text extraction mode, security hardening, improved install guidance, and ibarsi's contribution" \
   --tags latest
 ```
 
 After that, OpenClaw users can install it with:
 
 ```bash
-clawhub install scrapclaw --version 0.0.4
+clawhub install scrapclaw --version 0.0.5
 ```
 
 ## GitHub Actions and GHCR
@@ -263,7 +268,7 @@ The workflow in `.github/workflows/docker.yml`:
 - builds and pushes on `main`
 - builds and pushes on version tags like `v1.0.0`
 
-To publish a container release from this repo, push a semver tag such as `v0.0.4`.
+To publish a container release from this repo, push a semver tag such as `v0.0.5`.
 
 For publishing to work:
 
