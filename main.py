@@ -9,7 +9,7 @@ from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 from scrapling.fetchers import StealthyFetcher
 
-app = FastAPI(title="scrapclaw", version="0.0.2")
+app = FastAPI(title="scrapclaw", version="0.0.4")
 
 BLOCK_PRIVATE = os.getenv("SCRAPCLAW_BLOCK_PRIVATE_NETWORKS", "true").lower() != "false"
 API_TOKEN = os.getenv("SCRAPCLAW_API_TOKEN", "").strip()

@@ -21,10 +21,10 @@ Preferred: run the published Docker image from GitHub Container Registry:
 docker run --rm -d \
   --name scrapclaw \
   -p 8192:8192 \
-  ghcr.io/ericpearson/scrapclaw:v0.0.2
+  ghcr.io/ericpearson/scrapclaw:v0.0.4
 ```
 
-The same image is referenced by the GitHub `v0.0.2` release for this repo.
+The same image is referenced by the GitHub `v0.0.4` release for this repo.
 
 If you use the source build path instead of the published image, review the repo, `Dockerfile`, and `docker-compose.yml` first. Running `docker compose up --build` on unreviewed code can execute arbitrary code on the host.
 
@@ -50,7 +50,7 @@ cp -R skills/scrapclaw ~/.openclaw/workspace/skills/
 Or install it from ClawHub:
 
 ```bash
-clawhub install scrapclaw --version 0.0.2
+clawhub install scrapclaw --version 0.0.4
 ```
 
 ## Endpoint

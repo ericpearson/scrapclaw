@@ -184,17 +184,17 @@ Run the published container image first:
 docker run --rm -d \
   --name scrapclaw \
   -p 8192:8192 \
-  ghcr.io/ericpearson/scrapclaw:v0.0.2
+  ghcr.io/ericpearson/scrapclaw:v0.0.4
 ```
 
-That same image is the intended runtime for the GitHub `v0.0.2` release.
+That same image is the intended runtime for the GitHub `v0.0.4` release.
 
 If you use the source-build path instead, review the repo, [Dockerfile](/Users/epearson/projects/scrapclaw/Dockerfile), and [docker-compose.yml](/Users/epearson/projects/scrapclaw/docker-compose.yml) before running `docker compose up --build -d`. Building unreviewed code can execute arbitrary commands on the host.
 
 Then install the skill from ClawHub:
 
 ```bash
-clawhub install scrapclaw --version 0.0.2
+clawhub install scrapclaw --version 0.0.4
 ```
 
 If you prefer to run from source, you can still use:
@@ -244,15 +244,15 @@ OpenClaw's ClawHub registry publishes versioned skill folders, not the whole rep
 clawhub publish ./skills/scrapclaw \
   --slug scrapclaw \
   --name "Scrapclaw" \
-  --version 0.0.2 \
-  --changelog "Release 0.0.2" \
+  --version 0.0.4 \
+  --changelog "Security hardening, improved install guidance, and ibarsi's contribution" \
   --tags latest
 ```
 
 After that, OpenClaw users can install it with:
 
 ```bash
-clawhub install scrapclaw --version 0.0.2
+clawhub install scrapclaw --version 0.0.4
 ```
 
 ## GitHub Actions and GHCR
@@ -263,7 +263,7 @@ The workflow in `.github/workflows/docker.yml`:
 - builds and pushes on `main`
 - builds and pushes on version tags like `v1.0.0`
 
-To publish a container release from this repo, push a semver tag such as `v0.0.2`.
+To publish a container release from this repo, push a semver tag such as `v0.0.4`.
 
 For publishing to work:
 
