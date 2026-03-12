@@ -11,7 +11,7 @@ from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 from scrapling.fetchers import StealthyFetcher
 
-app = FastAPI(title="scrapclaw", version="0.0.5")
+app = FastAPI(title="scrapclaw", version="0.0.6")
 
 BLOCK_PRIVATE = os.getenv("SCRAPCLAW_BLOCK_PRIVATE_NETWORKS", "true").lower() != "false"
 API_TOKEN = os.getenv("SCRAPCLAW_API_TOKEN", "").strip()
@@ -30,6 +30,7 @@ class SolveRequest(BaseModel):
     maxTimeout: int = Field(default=60000, ge=1)
     wait: int = Field(default=0, ge=0)
     responseMode: str = Field(default="html")
+    maxResponseBytes: int | None = Field(default=None, ge=1)
 
 
 class _HTMLTextExtractor(HTMLParser):
@@ -79,6 +80,18 @@ def _extract_page_content(html: str) -> tuple[str, str]:
     parser.feed(html)
     parser.close()
     return parser.title, parser.text
+
+
+def _truncate_response(body: str, limit: int | None) -> tuple[str, bool]:
+    if limit is None:
+        return body, False
+
+    encoded = body.encode("utf-8")
+    if len(encoded) <= limit:
+        return body, False
+
+    truncated = encoded[:limit].decode("utf-8", errors="ignore")
+    return truncated, True
 
 
 def _is_blocked_ip(value: str) -> bool:
@@ -172,6 +185,7 @@ async def solve(req: SolveRequest, authorization: str | None = Header(default=No
     html_content = getattr(page, "html_content", str(page))
     title, text_content = _extract_page_content(html_content)
     response_body = html_content if req.responseMode == "html" else text_content
+    response_body, truncated = _truncate_response(response_body, req.maxResponseBytes)
 
     return {
         "status": "ok",
@@ -183,6 +197,7 @@ async def solve(req: SolveRequest, authorization: str | None = Header(default=No
             "status": getattr(page, "status", 200),
             "response": response_body,
             "responseMode": req.responseMode,
+            "truncated": truncated,
             "title": title,
             "cookies": [],
             "userAgent": "",
