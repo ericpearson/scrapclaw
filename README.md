@@ -9,6 +9,8 @@ It exposes a small FastAPI app that uses `scrapling`'s `StealthyFetcher` with Cl
 - `GET /` basic service status
 - `GET /health` health check endpoint for Docker and load balancers
 - `POST /v1` Scrapling-backed page fetch endpoint
+- Default blocking for localhost, private LAN, link-local, and other non-public targets
+- Optional bearer-token auth for API clients
 - Dockerfile ready for local builds and container platforms
 - `docker-compose.yml` for local or server deployment
 - OpenClaw-compatible skill bundle in `skills/scrapclaw`
@@ -115,8 +117,32 @@ The container supports:
 
 - `PORT`: HTTP listen port inside the container. Defaults to `8192`.
 - `TZ`: timezone. The compose file currently uses `America/Toronto`.
+- `SCRAPCLAW_BLOCK_PRIVATE_NETWORKS`: block requests to localhost/private/link-local targets. Defaults to `true`.
+- `SCRAPCLAW_ALLOWED_HOSTS`: comma-separated hostname allowlist that bypasses private-network blocking.
+- `SCRAPCLAW_API_TOKEN`: optional bearer token required on `POST /v1` when set.
+- `SCRAPCLAW_MAX_TIMEOUT_MS`: upper bound for `maxTimeout`. Defaults to `120000`.
+- `SCRAPCLAW_MAX_WAIT_MS`: upper bound for `wait`. Defaults to `10000`.
 
 If you want to change the exposed host port in `docker-compose.yml`, update both the `ports` mapping and the `PORT` environment value together.
+
+### Security defaults
+
+`POST /v1` only accepts `http` and `https` URLs and only supports `cmd: "request.get"`.
+
+By default, Scrapclaw resolves the target hostname and rejects requests that land on:
+
+- loopback addresses
+- RFC1918/private ranges
+- link-local addresses
+- multicast, reserved, and unspecified ranges
+
+If you intentionally need an internal hostname, add it to `SCRAPCLAW_ALLOWED_HOSTS`.
+
+If `SCRAPCLAW_API_TOKEN` is set, clients must send:
+
+```bash
+-H "Authorization: Bearer $SCRAPCLAW_API_TOKEN"
+```
 
 ## Deployment
 
@@ -176,6 +202,8 @@ By default the skill assumes Scrapclaw is reachable at `http://127.0.0.1:8192`. 
   }
 }
 ```
+
+If you configure `SCRAPCLAW_API_TOKEN` on the service, also provide it to the skill environment so the bundled `curl` command sends the bearer token.
 
 ### Publish the skill to ClawHub
 
